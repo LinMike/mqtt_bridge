@@ -1,0 +1,51 @@
+mqtt:
+  client:
+    protocol: 4      # MQTTv311
+  connection:
+    host: 10.0.1.199
+    port: 1883
+    keepalive: 60
+  account:
+    username: emqx
+    password: public
+  private_path: device/001
+serializer: json:dumps # 必须设置，否则mqttx中接收到的数据会有乱码
+deserializer: json:loads
+bridge:
+  # 接收RCS发布的任务信息
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    # msg_type: std_msgs.msg:String
+    msg_type: mqtt_msgs.msg:agv_task #必须是mqtt_msgs.msg, 包名.msg:定义的msg文件名
+    topic_from: taskBottom
+    topic_to: /taskBottom
+  # 接收RCS发布的地图信息
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: mqtt_msgs.msg:map_info_res
+    topic_from: mapInfoRes
+    topic_to: /mapInfoRes
+
+  # 发布agv的位置信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:agv_state
+    topic_from: /AGVState
+    topic_to: AGVState
+    # agv发布执行当前任务的进度
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:task_state
+    topic_from: /taskState
+    topic_to: taskState
+  # agv发布请求向服务器获取地图数据
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:map_info_req
+    topic_from: /mapInfoReq
+    topic_to: mapInfoReq
+  # agv发出的心跳信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: std_msgs.msg:String
+    topic_from: /heartbeatAGV
+    topic_to: heartbeatAGV
+  # agv发布的异常信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: std_msgs.msg:String
+    topic_from: /exceptionAGV
+    topic_to: exceptionAGV
