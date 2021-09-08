@@ -66,11 +66,13 @@ def mqtt_bridge_node():
     rospy.spin()
 
 
-def _on_connect(client, userdata, flags, response_code):
+# def _on_connect(client, userdata, flags, response_code):
+#     rospy.loginfo('MQTT connected')
+def _on_connect(client, userdata, flags, reasoncode, properties):
     rospy.loginfo('MQTT connected')
 
 
-def _on_disconnect(client, userdata, response_code):
+def _on_disconnect(client, userdata, response_code, properties=None):
     rospy.loginfo('MQTT disconnected')
 
 
