@@ -58,10 +58,11 @@ class RosToMqttBridge(Bridge):
     :param (float|None) frequency: publish frequency
     """
 
-    def __init__(self, topic_from, topic_to, msg_type, frequency=None):
+    def __init__(self, topic_from, topic_to, msg_type, qos, frequency=None):
         self._topic_from = topic_from
         self._topic_to = self._extract_private_path(topic_to)
         self._last_published = rospy.get_time()
+        self._qos = qos
         self._interval = 0 if frequency is None else 1.0 / frequency
         rospy.Subscriber(topic_from, msg_type, self._callback_ros)
 
@@ -74,7 +75,7 @@ class RosToMqttBridge(Bridge):
 
     def _publish(self, msg):
         payload = bytearray(self._serialize(extract_values(msg)))
-        self._mqtt_client.publish(topic=self._topic_to, payload=payload)
+        self._mqtt_client.publish(topic=self._topic_to, payload=payload, qos=self._qos)
 
 
 class MqttToRosBridge(Bridge):
@@ -87,16 +88,17 @@ class MqttToRosBridge(Bridge):
     :param int queue_size: ROS publisher's queue size
     """
 
-    def __init__(self, topic_from, topic_to, msg_type, frequency=None,
+    def __init__(self, topic_from, topic_to, msg_type, qos, frequency=None,
                  queue_size=10):
         self._topic_from = self._extract_private_path(topic_from)
         self._topic_to = topic_to
         self._msg_type = msg_type
         self._queue_size = queue_size
         self._last_published = rospy.get_time()
+        self._qos = qos
         self._interval = None if frequency is None else 1.0 / frequency
         # Adding the correct topic to subscribe to
-        self._mqtt_client.subscribe(self._topic_from)
+        self._mqtt_client.subscribe(self._topic_from, self._qos)
         self._mqtt_client.message_callback_add(self._topic_from, self._callback_mqtt)
         self._publisher = rospy.Publisher(
             self._topic_to, self._msg_type, queue_size=self._queue_size)
