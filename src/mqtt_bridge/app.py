@@ -10,12 +10,12 @@ from .mqtt_client import create_private_path_extractor
 from .util import lookup_object
 
 
-def create_config(mqtt_client, serializer, deserializer, mqtt_private_path):
+def create_config(mqtt_client, serializer, deserializer, mqtt_private_path, mac_address):
     if isinstance(serializer, basestring):
         serializer = lookup_object(serializer)
     if isinstance(deserializer, basestring):
         deserializer = lookup_object(deserializer)
-    private_path_extractor = create_private_path_extractor(mqtt_private_path)
+    private_path_extractor = create_private_path_extractor(mqtt_private_path, mac_address)
     def config(binder):
         binder.bind('serializer', serializer)
         binder.bind('deserializer', deserializer)
@@ -34,6 +34,7 @@ def mqtt_bridge_node():
     conn_params = mqtt_params.pop("connection")
     mqtt_private_path = mqtt_params.pop("private_path", "")
     bridge_params = params.get("bridge", [])
+    mac_address = params.pop("mac")
 
     # create mqtt client
     mqtt_client_factory_name = rospy.get_param(
@@ -47,7 +48,7 @@ def mqtt_bridge_node():
 
     # dependency injection
     config = create_config(
-        mqtt_client, serializer, deserializer, mqtt_private_path)
+        mqtt_client, serializer, deserializer, mqtt_private_path, mac_address)
     inject.configure(config)
 
     # configure and connect to MQTT broker

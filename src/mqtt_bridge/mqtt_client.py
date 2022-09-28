@@ -50,9 +50,13 @@ def default_mqtt_client_factory(params):
     return client
 
 
-def create_private_path_extractor(mqtt_private_path):
+def create_private_path_extractor(mqtt_private_path, mac_address):
     def extractor(topic_path):
-        if topic_path.startswith('~/'):
+        if topic_path.startswith('~/') & topic_path.endswith('$mac'):
+            print('{}/{}/{}'.format(mqtt_private_path, topic_path[2:-5], mac_address))
+            return '{}/{}/{}'.format(mqtt_private_path, topic_path[2:-5], mac_address)
+        else:
+            print('{}/{}'.format(mqtt_private_path, topic_path[2:]))
             return '{}/{}'.format(mqtt_private_path, topic_path[2:])
         return topic_path
     return extractor
