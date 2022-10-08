@@ -1,0 +1,123 @@
+mqtt:
+  client:
+    protocol: 4      # MQTTv311, ord() type error with protocl v5, python3.8 with protocol v5
+  connection:
+    # host: 10.0.1.198
+    host: 192.168.3.135
+    # host: 127.0.0.1
+    # host: 192.168.3.129
+    port: 1883
+    keepalive: 60
+  account:
+    # username: able
+    # password: able2020
+    username: emqx
+    password: public
+  will:
+    topic: ros_will
+    payload: '{"msg":"this is a will message with json format."}'
+    qos: 1
+    retain: False
+  private_path: /device/agv
+serializer: json:dumps # 必须设置，否则mqttx中接收到的数据会有乱码
+deserializer: json:loads
+bridge:
+  # topic中 '~/'会被替换为private_path，'$mac'会被替换为rosparam中的MAC地址
+  # 接收RCS发布的任务信息
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    # msg_type: std_msgs.msg:String
+    # msg_type: mqtt_msgs.msg:agv_task #必须是mqtt_msgs.msg, 包名.msg:定义的msg文件名
+    msg_type: mqtt_msgs.msg:TaskDispatch
+    topic_from: ~/sub/taskDispatch/$mac
+    topic_to: /taskDispatch
+    qos: 2
+  # AGV接收RCS发送的地图信息的请求后向mqtt发布地图数据
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: mqtt_msgs.msg:map_info_req
+    topic_from: ~/sub/mapInfoReq/$mac
+    topic_to: /mapInfoReq
+    qos: 2
+  # pause global and local planning when a pause command is received
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: mqtt_msgs.msg:Command
+    topic_from: ~/sub/command/$mac
+    topic_to: /sub/command
+    # topic_to: /pause_planning
+    qos: 2
+  # 接收来自RCS的agv的注册信息
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: mqtt_msgs.msg:Register
+    topic_from: ~/sub/register/$mac
+    topic_to: /sub/register
+    qos: 2
+  
+  # 接收RCS发布的地图信息
+  # - factory: mqtt_bridge.bridge:MqttToRosBridge
+  #   msg_type: mqtt_msgs.msg:map_info_res
+  #   topic_from: mapInfoRes
+  #   topic_to: /mapInfoRes
+  #   qos: 2
+
+  # 发布地图信息，其中包含ros图片的像素char字符串
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:map_info_upload
+    topic_from: /mapInfo
+    topic_to: ~/pub/mapInfo/$mac
+    qos: 0
+  # - factory: mqtt_bridge.bridge:MqttToRosBridge
+  #   msg_type: mqtt_msgs.msg:agv_task2 #必须是mqtt_msgs.msg, 包名.msg:定义的msg文件名
+  #   topic_from: /pub/sh0001/0001/weishi_0001
+  #   topic_to: /pub/sh0001/0001/weishi_0001
+  #   qos: 2
+
+  # 发布agv的位置信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:AgvState
+    topic_from: /state
+    topic_to: ~/pub/state/$mac
+    qos: 0
+
+    # agv发布执行当前任务的进度
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:TaskState
+    topic_from: /task
+    topic_to: ~/pub/task/$mac
+    qos: 0
+
+  # # agv发出的心跳信息
+  # - factory: mqtt_bridge.bridge:RosToMqttBridge
+  #   msg_type: std_msgs.msg:String
+  #   topic_from: /heartbeatAGV
+  #   topic_to: heartbeatAGV
+  #   qos: 0
+  # # agv发布的异常信息
+  # - factory: mqtt_bridge.bridge:RosToMqttBridge
+  #   msg_type: std_msgs.msg:String
+  #   topic_from: /exceptionAGV
+  #   topic_to: exceptionAGV
+  #   qos: 2
+  # agv path polygon
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:path_polygon
+    topic_from: /path_polygon
+    topic_to: ~/pub/path_polygon/$mac
+    qos: 0
+  # 向RCS发布agv的注册信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:Register
+    topic_from: /pub/register
+    topic_to: ~/pub/register/$mac
+    qos: 2
+  # 向RCS发布agv的局部规划器的全局路径信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:RouteData
+    topic_from: /pub/globalRoute
+    topic_to: ~/pub/globalRoute/$mac #/move_base_node/DWAPlannerROS/global_plan
+    qos: 0
+  # 向RCS发布agv的局部规划器的局部路径信息
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: mqtt_msgs.msg:RouteData
+    topic_from: /pub/localRoute
+    topic_to: ~/pub/localRoute/$mac #/move_base_node/DWAPlannerROS/local_plan
+    qos: 0
+  # TODO：接收RCS命令发布state和task
