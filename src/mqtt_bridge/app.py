@@ -9,6 +9,7 @@ from .bridge import create_bridge
 from .mqtt_client import create_private_path_extractor
 from .util import lookup_object
 
+import netifaces
 
 def create_config(mqtt_client, serializer, deserializer, mqtt_private_path, mac_address):
     if isinstance(serializer, basestring):
@@ -23,6 +24,21 @@ def create_config(mqtt_client, serializer, deserializer, mqtt_private_path, mac_
         binder.bind('mqtt_private_path_extractor', private_path_extractor)
     return config
 
+##################################################################
+# get mac address info
+def get_wifi_device_name():
+    devices = netifaces.interfaces()
+    print(devices)
+    # raise Exception("test exception") # test exception
+    for device in devices:
+        if device.lower().find('w') >= 0: # wifi device interface name has character 'w'
+            return device
+
+def get_device_mac_address(device_name):
+    info = netifaces.ifaddresses(device_name)
+    addr = info[netifaces.AF_PACKET][0]['addr']
+    return ''.join(addr.split(':'))
+##################################################################
 
 def mqtt_bridge_node():
     # init node
@@ -34,7 +50,17 @@ def mqtt_bridge_node():
     conn_params = mqtt_params.pop("connection")
     mqtt_private_path = mqtt_params.pop("private_path", "")
     bridge_params = params.get("bridge", [])
-    mac_address = params.pop("mac")
+
+    mac_address = ""
+    try:
+        mac_address = get_device_mac_address(get_wifi_device_name())
+    except Exception as re:
+        print('get mac address by netifaces failed.', re)
+
+    if len(mac_address) == 0:
+        print("get mac address from config file")
+        mac_address = params.pop("mac")
+    print("MAC ADDRESS: %s"%mac_address)
 
     # create mqtt client
     mqtt_client_factory_name = rospy.get_param(
