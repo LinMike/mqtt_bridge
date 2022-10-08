@@ -1,4 +1,6 @@
 inject>=4.0
 msgpack-python>=0.4.8
 paho-mqtt>=1.2
-pymongo
+# pymongo<4 # for python < 3.7
+pymongo # for python >= 3.7
+netifaces  # get wifi mac address
