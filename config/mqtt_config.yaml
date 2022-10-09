@@ -1,6 +1,6 @@
 mqtt:
   client:
-    protocol: 5      # MQTTv311, ord() type error with protocl v5, python3.8 with protocol v5
+    protocol: 4      # MQTTv311, ord() type error with protocl v5, python3.8 with protocol v5
   connection:
     # host: 10.0.1.198
     host: 192.168.3.135
