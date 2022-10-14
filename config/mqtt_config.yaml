@@ -7,15 +7,15 @@ mqtt:
     # host: 127.0.0.1
     # host: 192.168.3.129
     port: 1883
-    keepalive: 60
+    keepalive: 30
   account:
     # username: able
     # password: able2020
     username: emqx
     password: public
   will:
-    topic: ros_will
-    payload: '{"msg":"this is a will message with json format."}'
+    topic: ~/will_message
+    payload: '{"id":"$mac"}'
     qos: 1
     retain: False
   private_path: /device/agv

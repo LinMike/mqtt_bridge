@@ -61,6 +61,9 @@ def mqtt_bridge_node():
         print("get mac address from config file")
         mac_address = params.pop("mac")
     print("MAC ADDRESS: %s"%mac_address)
+    # save params
+    rospy.set_param('mqtt_private_path', mqtt_private_path)
+    rospy.set_param('mac_address', mac_address) # save localhost wifi device mac address
 
     # create mqtt client
     mqtt_client_factory_name = rospy.get_param(

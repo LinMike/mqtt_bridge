@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import paho.mqtt.client as mqtt
 
+import rospy
+
 
 def default_mqtt_client_factory(params):
     u""" MQTT Client factory
@@ -43,7 +45,29 @@ def default_mqtt_client_factory(params):
         client.user_data_set(userdata)
 
     # configure will params
+    mac_address = rospy.get_param('mac_address')    # get params initialized
+    mqtt_private_path = rospy.get_param('mqtt_private_path')
     will_params = params.get('will', {})
+    will_topic = will_params['topic']               # 
+    will_payload = will_params['payload']
+    updated = False
+    if will_topic.find('$mac'):
+        result = will_topic.replace('$mac', mac_address)
+        updated = True
+    if result.startswith('~'):
+        result = result.replace('~', mqtt_private_path)
+        updated = True
+    if updated:
+        will_params.update({'topic': result})
+    # print(result)
+    updated = False
+    if will_payload.find('$mac'):
+        result = will_payload.replace('$mac', mac_address)
+        updated = True
+    if updated:
+        will_params.update({'payload': result})
+    # print(result)
+    print(will_params)
     if will_params:
         client.will_set(**will_params)
 
